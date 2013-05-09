@@ -1,0 +1,33 @@
+#!/bin/sh
+
+echo -n "Testing no arguments... "
+./verifymessage 2>/dev/null
+if [ $? -eq 255 ] ; then echo "pass."; else echo "FAIL!"; fi
+
+echo -n "Testing valid/correct signature... "
+./verifymessage 17u1mDkgNcdwi44braeTKpvnfNnTrgvBfB 'IHfvfadyMsn/P0tKH6UnDnbYiZcOWWhk8xbGIWUOwTX75MR8LfEn9Mdxq5R2h1IRXKaFxbqR6SfC3sZrHBdA0Tg=' 'test signature' >/dev/null
+if [ $? -eq 0 ] ; then echo "pass."; else echo "FAIL!"; fi
+
+echo -n "Testing modified message... "
+./verifymessage 17u1mDkgNcdwi44braeTKpvnfNnTrgvBfB 'IHfvfadyMsn/P0tKH6UnDnbYiZcOWWhk8xbGIWUOwTX75MR8LfEn9Mdxq5R2h1IRXKaFxbqR6SfC3sZrHBdA0Tg=' 'test evil attacker' >/dev/null
+if [ $? -eq 1 ] ; then echo "pass."; else echo "FAIL!"; fi
+
+echo -n "Testing modified address... "
+./verifymessage 17qnunSja9HUsb6yAg7XG3sQeEABLSBA2w 'IHfvfadyMsn/P0tKH6UnDnbYiZcOWWhk8xbGIWUOwTX75MR8LfEn9Mdxq5R2h1IRXKaFxbqR6SfC3sZrHBdA0Tg=' 'test signature' >/dev/null
+if [ $? -eq 1 ] ; then echo "pass."; else echo "FAIL!"; fi
+
+echo -n "Testing mistyped address (checksum error) ... "
+./verifymessage 17u1mDkgNcDwi44braeTKpvnfNnTrgvBfB 'IHfvfadyMsn/P0tKH6UnDnbYiZcOWWhk8xbGIWUOwTX75MR8LfEn9Mdxq5R2h1IRXKaFxbqR6SfC3sZrHBdA0Tg=' 'test signature' 2>/dev/null
+if [ $? -eq 2 ] ; then echo "pass."; else echo "FAIL!"; fi
+
+echo -n "Testing wrong type of address... "
+./verifymessage 38XoqKwB83brxkoQHmn7ggELnkSttNNnQq 'IHfvfadyMsn/P0tKH6UnDnbYiZcOWWhk8xbGIWUOwTX75MR8LfEn9Mdxq5R2h1IRXKaFxbqR6SfC3sZrHBdA0Tg=' 'test signature' 2>/dev/null
+if [ $? -eq 3 ] ; then echo "pass."; else echo "FAIL!"; fi
+
+echo -n "Testing malformed base64... "
+./verifymessage 17u1mDkgNcdwi44braeTKpvnfNnTrgvBfB 'IHfvfadyMsn/P0tKH6UnDnbYiZcOWWhk8xbGIWUOwTX75MR8LfEn9Mdxq5R2h1IRXKaFxbqR6SfC3sZrHBdA0T' 'test signature' 2>/dev/null
+if [ $? -eq 4 ] ; then echo "pass."; else echo "FAIL!"; fi
+
+echo -n "Testing malformed signature... "
+./verifymessage 17u1mDkgNcdwi44braeTKpvnfNnTrgvBfB 'IHfvfadyMsn/P0tKH6UnDnbYiZcOWWhk8xbGIWUOwTX75MR8LfEn9Mdxq5R2h1IRXKaFxbqR6SfC3sZrHBdA0Tgg' 'test signature' 2>/dev/null
+if [ $? -eq 5 ] ; then echo "pass."; else echo "FAIL!"; fi
