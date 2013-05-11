@@ -9,43 +9,6 @@
 
 #include "key.h"
 
-// Generate a private key from just the secret parameter
-int EC_KEY_regenerate_key(EC_KEY *eckey, BIGNUM *priv_key)
-{
-    int ok = 0;
-    BN_CTX *ctx = NULL;
-    EC_POINT *pub_key = NULL;
-
-    if (!eckey) return 0;
-
-    const EC_GROUP *group = EC_KEY_get0_group(eckey);
-
-    if ((ctx = BN_CTX_new()) == NULL)
-        goto err;
-
-    pub_key = EC_POINT_new(group);
-
-    if (pub_key == NULL)
-        goto err;
-
-    if (!EC_POINT_mul(group, pub_key, priv_key, NULL, NULL, ctx))
-        goto err;
-
-    EC_KEY_set_private_key(eckey,priv_key);
-    EC_KEY_set_public_key(eckey,pub_key);
-
-    ok = 1;
-
-err:
-
-    if (pub_key)
-        EC_POINT_free(pub_key);
-    if (ctx != NULL)
-        BN_CTX_free(ctx);
-
-    return(ok);
-}
-
 // Perform ECDSA key recovery (see SEC1 4.1.6) for curves over (mod p)-fields
 // recid selects which key is recovered
 // if check is non-zero, additional checks are performed
@@ -280,24 +243,4 @@ bool CKey::SetCompactSignature(uint256 hash, const std::vector<unsigned char>& v
         return true;
     }
     return false;
-}
-
-bool CKey::Verify(uint256 hash, const std::vector<unsigned char>& vchSig)
-{
-    // -1 = error, 0 = bad sig, 1 = good
-    if (ECDSA_verify(0, (unsigned char*)&hash, sizeof(hash), &vchSig[0], vchSig.size(), pkey) != 1)
-        return false;
-
-    return true;
-}
-
-bool CKey::VerifyCompact(uint256 hash, const std::vector<unsigned char>& vchSig)
-{
-    CKey key;
-    if (!key.SetCompactSignature(hash, vchSig))
-        return false;
-    if (GetPubKey() != key.GetPubKey())
-        return false;
-
-    return true;
 }

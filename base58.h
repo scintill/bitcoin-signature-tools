@@ -73,16 +73,6 @@ inline bool DecodeBase58(const char* psz, std::vector<unsigned char>& vchRet)
     return true;
 }
 
-// Decode a base58-encoded string str into byte vector vchRet
-// returns true if decoding is successful
-inline bool DecodeBase58(const std::string& str, std::vector<unsigned char>& vchRet)
-{
-    return DecodeBase58(str.c_str(), vchRet);
-}
-
-
-
-
 // Decode a base58-encoded string psz that includes a checksum, into byte vector vchRet
 // returns true if decoding is successful
 inline bool DecodeBase58Check(const char* psz, std::vector<unsigned char>& vchRet)
@@ -104,13 +94,6 @@ inline bool DecodeBase58Check(const char* psz, std::vector<unsigned char>& vchRe
     return true;
 }
 
-// Decode a base58-encoded string str that includes a checksum, into byte vector vchRet
-// returns true if decoding is successful
-inline bool DecodeBase58Check(const std::string& str, std::vector<unsigned char>& vchRet)
-{
-    return DecodeBase58Check(str.c_str(), vchRet);
-}
-
 
 
 
@@ -130,19 +113,6 @@ protected:
     {
         nVersion = 0;
         vchData.clear();
-    }
-
-    void SetData(int nVersionIn, const void* pdata, size_t nSize)
-    {
-        nVersion = nVersionIn;
-        vchData.resize(nSize);
-        if (!vchData.empty())
-            memcpy(&vchData[0], pdata, nSize);
-    }
-
-    void SetData(int nVersionIn, const unsigned char *pbegin, const unsigned char *pend)
-    {
-        SetData(nVersionIn, (void*)pbegin, pend - pbegin);
     }
 
 public:
@@ -169,20 +139,6 @@ public:
         return SetString(str.c_str());
     }
 
-    int CompareTo(const CBase58Data& b58) const
-    {
-        if (nVersion < b58.nVersion) return -1;
-        if (nVersion > b58.nVersion) return  1;
-        if (vchData < b58.vchData)   return -1;
-        if (vchData > b58.vchData)   return  1;
-        return 0;
-    }
-
-    bool operator==(const CBase58Data& b58) const { return CompareTo(b58) == 0; }
-    bool operator<=(const CBase58Data& b58) const { return CompareTo(b58) <= 0; }
-    bool operator>=(const CBase58Data& b58) const { return CompareTo(b58) >= 0; }
-    bool operator< (const CBase58Data& b58) const { return CompareTo(b58) <  0; }
-    bool operator> (const CBase58Data& b58) const { return CompareTo(b58) >  0; }
 };
 
 /** base58-encoded Bitcoin addresses.
@@ -201,16 +157,6 @@ public:
         PUBKEY_ADDRESS_TEST = 111,
         SCRIPT_ADDRESS_TEST = 196,
     };
-
-    bool Set(const CKeyID &id) {
-        SetData(fTestNet ? PUBKEY_ADDRESS_TEST : PUBKEY_ADDRESS, &id, 20);
-        return true;
-    }
-
-    bool Set(const CScriptID &id) {
-        SetData(fTestNet ? SCRIPT_ADDRESS_TEST : SCRIPT_ADDRESS, &id, 20);
-        return true;
-    }
 
     bool IsValid() const
     {
@@ -271,17 +217,6 @@ public:
         }
     }
 
-    bool IsScript() const {
-        if (!IsValid())
-            return false;
-        switch (nVersion) {
-        case SCRIPT_ADDRESS:
-        case SCRIPT_ADDRESS_TEST: {
-            return true;
-        }
-        default: return false;
-        }
-    }
 };
 
 #endif // BITCOIN_BASE58_H

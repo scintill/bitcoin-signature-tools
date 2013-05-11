@@ -11,8 +11,14 @@ The only library this depends on is OpenSSL.  On Ubuntu or similar systems, the 
     sudo apt-get install build-essential libssl-dev
     make
 
-The [bitcoin-qt documentation](https://github.com/bitcoin/bitcoin/tree/master/doc) may be helpful in installing dependencies for your system.  You don't need the databases, Boost, or miniupnp, only OpenSSL and a compiler.
+The [bitcoin-qt documentation](https://github.com/bitcoin/bitcoin/tree/master/doc) may be helpful in installing dependencies for your system.  You don't need the databases, Boost, or miniupnp, only OpenSSL and the GNU toolchain.
 
 ## Usage
 
 Please see [tests/verifymessage](https://github.com/scintill/bitcoin-signature-tools/tree/master/tests/verifymessage) for examples of how to use the verifymessage tool from a shell script.
+
+## Security
+
+These tools may not protect in-memory data as well as bitcoin-qt does (from leaking after free, or being paged-out.)  For now I don't think this is a problem since there are no secrets being handled.
+
+Remember that arguments passed on a process' command line are visible to local users in most UNIX systems, so make sure you trust all local users enough, or adjust the programs to take arguments another way.
