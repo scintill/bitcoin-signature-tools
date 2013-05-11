@@ -8,6 +8,10 @@ echo -n "Testing valid/correct signature... "
 ./verifymessage 17u1mDkgNcdwi44braeTKpvnfNnTrgvBfB 'IHfvfadyMsn/P0tKH6UnDnbYiZcOWWhk8xbGIWUOwTX75MR8LfEn9Mdxq5R2h1IRXKaFxbqR6SfC3sZrHBdA0Tg=' 'test signature' >/dev/null
 if [ $? -eq 0 ] ; then echo "pass."; else echo "FAIL!"; fi
 
+echo -n "Testing valid/correct signature (uncompressed address)... "
+./verifymessage 1HNPhhfsVTZ6Visozkzwi1NAk3yDQnmfgH 'G7Q5ULHgIJhvORjhmF2wEFJloc3UzzCn4ypBPE+g9GOmz93t0WuLUzYSzAGpzN24qhK+uw4X1+7KtDH8WLLSdo8=' '' >/dev/null
+if [ $? -eq 0 ] ; then echo "pass."; else echo "FAIL!"; fi
+
 echo -n "Testing modified message... "
 ./verifymessage 17u1mDkgNcdwi44braeTKpvnfNnTrgvBfB 'IHfvfadyMsn/P0tKH6UnDnbYiZcOWWhk8xbGIWUOwTX75MR8LfEn9Mdxq5R2h1IRXKaFxbqR6SfC3sZrHBdA0Tg=' 'test evil attacker' >/dev/null
 if [ $? -eq 1 ] ; then echo "pass."; else echo "FAIL!"; fi
