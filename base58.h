@@ -21,6 +21,7 @@
 #include "bignum.h"
 #include "key.h"
 #include "allocators.h"
+#include <assert.h>
 
 static const char* pszBase58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 extern bool fTestNet;
@@ -113,6 +114,19 @@ protected:
     {
         nVersion = 0;
         vchData.clear();
+    }
+
+    void SetData(int nVersionIn, const void* pdata, size_t nSize)
+    {
+        nVersion = nVersionIn;
+        vchData.resize(nSize);
+        if (!vchData.empty())
+            memcpy(&vchData[0], pdata, nSize);
+    }
+
+    void SetData(int nVersionIn, const unsigned char *pbegin, const unsigned char *pend)
+    {
+        SetData(nVersionIn, (void*)pbegin, pend - pbegin);
     }
 
 public:
@@ -217,6 +231,64 @@ public:
         }
     }
 
+};
+
+class CBitcoinSecret : public CBase58Data
+{
+public:
+    void SetSecret(const CSecret& vchSecret, bool fCompressed)
+    {
+        assert(vchSecret.size() == 32);
+        SetData(fTestNet ? 239 : 128, &vchSecret[0], vchSecret.size());
+        if (fCompressed)
+            vchData.push_back(1);
+    }
+
+    CSecret GetSecret(bool &fCompressedOut)
+    {
+        CSecret vchSecret;
+        vchSecret.resize(32);
+        memcpy(&vchSecret[0], &vchData[0], 32);
+        fCompressedOut = vchData.size() == 33;
+        return vchSecret;
+    }
+
+    bool IsValid() const
+    {
+        bool fExpectTestNet = false;
+        switch(nVersion)
+        {
+            case 128:
+                break;
+
+            case 239:
+                fExpectTestNet = true;
+                break;
+
+            default:
+                return false;
+        }
+        return fExpectTestNet == fTestNet && (vchData.size() == 32 || (vchData.size() == 33 && vchData[32] == 1));
+    }
+
+    bool SetString(const char* pszSecret)
+    {
+        return CBase58Data::SetString(pszSecret) && IsValid();
+    }
+
+    bool SetString(const std::string& strSecret)
+    {
+        return SetString(strSecret.c_str());
+    }
+
+    CBitcoinSecret(const CSecret& vchSecret, bool fCompressed)
+    {
+        SetSecret(vchSecret, fCompressed);
+    }
+
+    CBitcoinSecret()
+    {
+    }
 };
 
 #endif // BITCOIN_BASE58_H

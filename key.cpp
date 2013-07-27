@@ -9,6 +9,43 @@
 
 #include "key.h"
 
+// Generate a private key from just the secret parameter
+int EC_KEY_regenerate_key(EC_KEY *eckey, BIGNUM *priv_key)
+{
+    int ok = 0;
+    BN_CTX *ctx = NULL;
+    EC_POINT *pub_key = NULL;
+
+    if (!eckey) return 0;
+
+    const EC_GROUP *group = EC_KEY_get0_group(eckey);
+
+    if ((ctx = BN_CTX_new()) == NULL)
+        goto err;
+
+    pub_key = EC_POINT_new(group);
+
+    if (pub_key == NULL)
+        goto err;
+
+    if (!EC_POINT_mul(group, pub_key, priv_key, NULL, NULL, ctx))
+        goto err;
+
+    EC_KEY_set_private_key(eckey,priv_key);
+    EC_KEY_set_public_key(eckey,pub_key);
+
+    ok = 1;
+
+err:
+
+    if (pub_key)
+        EC_POINT_free(pub_key);
+    if (ctx != NULL)
+        BN_CTX_free(ctx);
+
+    return(ok);
+}
+
 // Perform ECDSA key recovery (see SEC1 4.1.6) for curves over (mod p)-fields
 // recid selects which key is recovered
 // if check is non-zero, additional checks are performed
@@ -156,6 +193,79 @@ CPubKey CKey::GetPubKey() const
     if (i2o_ECPublicKey(pkey, &pbegin) != nSize)
         throw key_error("CKey::GetPubKey() : i2o_ECPublicKey returned unexpected size");
     return CPubKey(vchPubKey);
+}
+
+bool CKey::SetPrivKey(const CPrivKey& vchPrivKey)
+{
+    const unsigned char* pbegin = &vchPrivKey[0];
+    if (d2i_ECPrivateKey(&pkey, &pbegin, vchPrivKey.size()))
+    {
+        // In testing, d2i_ECPrivateKey can return true
+        // but fill in pkey with a key that fails
+        // EC_KEY_check_key, so:
+        if (EC_KEY_check_key(pkey))
+        {
+            fSet = true;
+            return true;
+        }
+    }
+    // If vchPrivKey data is bad d2i_ECPrivateKey() can
+    // leave pkey in a state where calling EC_KEY_free()
+    // crashes. To avoid that, set pkey to NULL and
+    // leak the memory (a leak is better than a crash)
+    pkey = NULL;
+    Reset();
+    return false;
+}
+
+bool CKey::SetSecret(const CSecret& vchSecret, bool fCompressed)
+{
+    EC_KEY_free(pkey);
+    pkey = EC_KEY_new_by_curve_name(NID_secp256k1);
+    if (pkey == NULL)
+        throw key_error("CKey::SetSecret() : EC_KEY_new_by_curve_name failed");
+    if (vchSecret.size() != 32)
+        throw key_error("CKey::SetSecret() : secret must be 32 bytes");
+    BIGNUM *bn = BN_bin2bn(&vchSecret[0],32,BN_new());
+    if (bn == NULL)
+        throw key_error("CKey::SetSecret() : BN_bin2bn failed");
+    if (!EC_KEY_regenerate_key(pkey,bn))
+    {
+        BN_clear_free(bn);
+        throw key_error("CKey::SetSecret() : EC_KEY_regenerate_key failed");
+    }
+    BN_clear_free(bn);
+    fSet = true;
+    if (fCompressed || fCompressedPubKey)
+        SetCompressedPubKey();
+    return true;
+}
+
+CSecret CKey::GetSecret(bool &fCompressed) const
+{
+    CSecret vchRet;
+    vchRet.resize(32);
+    const BIGNUM *bn = EC_KEY_get0_private_key(pkey);
+    int nBytes = BN_num_bytes(bn);
+    if (bn == NULL)
+        throw key_error("CKey::GetSecret() : EC_KEY_get0_private_key failed");
+    int n=BN_bn2bin(bn,&vchRet[32 - nBytes]);
+    if (n != nBytes)
+        throw key_error("CKey::GetSecret(): BN_bn2bin failed");
+    fCompressed = fCompressedPubKey;
+    return vchRet;
+}
+
+CPrivKey CKey::GetPrivKey() const
+{
+    int nSize = i2d_ECPrivateKey(pkey, NULL);
+    if (!nSize)
+        throw key_error("CKey::GetPrivKey() : i2d_ECPrivateKey failed");
+    CPrivKey vchPrivKey(nSize, 0);
+    unsigned char* pbegin = &vchPrivKey[0];
+    if (i2d_ECPrivateKey(pkey, &pbegin) != nSize)
+        throw key_error("CKey::GetPrivKey() : i2d_ECPrivateKey returned unexpected size");
+    return vchPrivKey;
 }
 
 bool CKey::Sign(uint256 hash, std::vector<unsigned char>& vchSig)

@@ -1,0 +1,9 @@
+#!/bin/sh
+
+echo -n "Signing with 12gnS49iSaBfK8EuMNKHZ8uXACdgRkHyoF... "
+./signmessage 5JvJXCTEeMnVTudK58zs9p22CokFVfs39ZpUMNr1RKSW7zNae12 'test signature' >/dev/null
+if [ $? -eq 0 ] ; then echo "pass."; else echo "FAIL!"; fi
+
+echo -n "Verifying with 12gnS49iSaBfK8EuMNKHZ8uXACdgRkHyoF... "
+./verifymessage 12gnS49iSaBfK8EuMNKHZ8uXACdgRkHyoF 'HL5qYpt3ISZVOCGCbHT5nZNKsk3aSGLE+8bnw/gqPfIZoj3bcywtgszv2CHZ6F4e9Dj4Tbj49YnqpnfoL9BVBfw=' 'test signature' >/dev/null
+if [ $? -eq 0 ] ; then echo "pass."; else echo "FAIL!"; fi

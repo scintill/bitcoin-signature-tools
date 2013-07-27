@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "hash.h"
-
+#include "allocators.h"
 #include <openssl/ec.h> // for EC_KEY definition
 
 class key_error : public std::runtime_error
@@ -68,6 +68,13 @@ public:
     }
 };
 
+// removed secure_allocator, this is a very bad idea unless you have a secure system.
+// secure_allocator is defined in allocators.h
+// CPrivKey is a serialized private key, with all parameters included (279 bytes)
+typedef std::vector<unsigned char> CPrivKey;
+// CSecret is a serialization of just the secret parameter (32 bytes)
+typedef std::vector<unsigned char> CSecret;
+
 
 /** An encapsulated OpenSSL Elliptic Curve key (public and/or private) */
 class CKey
@@ -95,6 +102,12 @@ public:
     void MakeNewKey(bool fCompressed);
     bool SetPubKey(const CPubKey& vchPubKey);
     CPubKey GetPubKey() const;
+
+    bool SetPrivKey(const CPrivKey& vchPrivKey);
+    bool SetSecret(const CSecret& vchSecret, bool fCompressed = false);
+    CSecret GetSecret(bool &fCompressed) const;
+    CPrivKey GetPrivKey() const;
+    
 
     bool Sign(uint256 hash, std::vector<unsigned char>& vchSig);
 
