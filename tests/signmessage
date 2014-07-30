@@ -1,9 +1,10 @@
 #!/bin/sh
 
-echo -n "Signing with 12gnS49iSaBfK8EuMNKHZ8uXACdgRkHyoF... "
-./signmessage 5JvJXCTEeMnVTudK58zs9p22CokFVfs39ZpUMNr1RKSW7zNae12 'test signature' >/dev/null
-if [ $? -eq 0 ] ; then echo "pass."; else echo "FAIL!"; fi
+# Signing isn't deterministic due to random nonce, so it's hard to test automatically
+echo -n "Signing with 12gnS49iSaBfK8EuMNKHZ8uXACdgRkHyoF (verify manually with another program)... "
+./signmessage 5JvJXCTEeMnVTudK58zs9p22CokFVfs39ZpUMNr1RKSW7zNae12 'test signature'
 
-echo -n "Verifying with 12gnS49iSaBfK8EuMNKHZ8uXACdgRkHyoF... "
-./verifymessage 12gnS49iSaBfK8EuMNKHZ8uXACdgRkHyoF 'HL5qYpt3ISZVOCGCbHT5nZNKsk3aSGLE+8bnw/gqPfIZoj3bcywtgszv2CHZ6F4e9Dj4Tbj49YnqpnfoL9BVBfw=' 'test signature' >/dev/null
+# We can at least check that we can verify our own random signature
+echo -n "Signing and then verifying... "
+./verifymessage 12gnS49iSaBfK8EuMNKHZ8uXACdgRkHyoF $(./signmessage 5JvJXCTEeMnVTudK58zs9p22CokFVfs39ZpUMNr1RKSW7zNae12 'test signature') 'test signature' >/dev/null
 if [ $? -eq 0 ] ; then echo "pass."; else echo "FAIL!"; fi
